@@ -3,7 +3,7 @@
 	  	<transition name="form-fade" mode="in-out">
 	  		<section class="form_contianer" v-show="showLogin">
 		  		<div class="manage_tip">
-		  			<p>elm后台管理系统</p>
+		  			<p>damned bysj管理系统</p>
 		  		</div>
 		    	<el-form :model="loginForm" :rules="rules" ref="loginForm">
 					<el-form-item prop="username">
@@ -16,9 +16,9 @@
 				    	<el-button type="primary" @click="submitForm('loginForm')" class="submit_btn">登录</el-button>
 				  	</el-form-item>
 				</el-form>
-				<p class="tip">温馨提示：</p>
-				<p class="tip">未登录过的新用户，自动注册</p>
-				<p class="tip">注册过的用户可凭账号密码登录</p>
+				<!--<p class="tip">温馨提示：</p>-->
+				<!--<p class="tip">未登录过的新用户，自动注册</p>-->
+				<!--<p class="tip">注册过的用户可凭账号密码登录</p>-->
 	  		</section>
 	  	</transition>
   	</div>
@@ -57,23 +57,35 @@
 		},
 		methods: {
 			...mapActions(['getAdminData']),
-			async submitForm(formName) {
+			submitForm(formName) {
 				this.$refs[formName].validate(async (valid) => {
-					if (valid) {
-						const res = await login({user_name: this.loginForm.username, password: this.loginForm.password})
-						if (res.status == 1) {
-							this.$message({
-		                        type: 'success',
-		                        message: '登录成功'
-		                    });
-							this.$router.push('manage')
-						}else{
-							this.$message({
-		                        type: 'error',
-		                        message: res.message
-		                    });
-						}
-					} else {
+                    if (valid) {
+                        this.$http.post('/login', {
+                            loginName:this.loginForm.username,
+                            loginPawd:this.loginForm.password,
+                        }).then((res) => {
+                            if (res.status == 200) {
+                                this.userInfo = res.data.userSearched;
+                                if (res.data.status == 1) {
+                                    // 登录成功，sessionStorage放userInfo; localStorage保存token
+                                    window.sessionStorage.userInfo = JSON.stringify(this.userInfo);
+                                    localStorage.setItem('token', res.data.token)
+                                    this.$router.push('manage')
+                                } else {
+                                    this.$message({
+                                        message: res.data.msg,
+                                        type: res.data.status == -2 ? 'warning' : 'error'
+                                    })
+                                }
+                            } else {
+                                this.$durationMes.error({
+                                    message:'请求出现错误'
+                                })
+                            }
+                        }, (err) => {
+                            console.log(err);
+                        })
+                    } else {
 						this.$notify.error({
 							title: '错误',
 							message: '请输入正确的用户名密码',

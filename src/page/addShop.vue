@@ -77,39 +77,39 @@
 						</el-time-select>
 					</el-form-item>
 
-					<el-form-item label="上传店铺头像">
-						<el-upload
-						  class="avatar-uploader"
-						  :action="baseUrl + '/v1/addimg/shop'"
-						  :show-file-list="false"
-						  :on-success="handleShopAvatarScucess"
-						  :before-upload="beforeAvatarUpload">
-						  <img v-if="formData.image_path" :src="baseImgPath + formData.image_path" class="avatar">
-						  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-						</el-upload>
-					</el-form-item>
-					<el-form-item label="上传营业执照">
-						<el-upload
-						  class="avatar-uploader"
-						  :action="baseUrl + '/v1/addimg/shop'"
-						  :show-file-list="false"
-						  :on-success="handleBusinessAvatarScucess"
-						  :before-upload="beforeAvatarUpload">
-						  <img v-if="formData.business_license_image" :src="baseImgPath + formData.business_license_image" class="avatar">
-						  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-						</el-upload>
-					</el-form-item>
-					<el-form-item label="上传餐饮服务许可证">
-						<el-upload
-						  class="avatar-uploader"
-						  :action="baseUrl + '/v1/addimg/shop'"
-						  :show-file-list="false"
-						  :on-success="handleServiceAvatarScucess"
-						  :before-upload="beforeAvatarUpload">
-						  <img v-if="formData.catering_service_license_image" :src="baseImgPath + formData.catering_service_license_image" class="avatar">
-						  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-						</el-upload>
-					</el-form-item>
+					<!--<el-form-item label="上传店铺头像">-->
+					<!--	<el-upload-->
+					<!--	  class="avatar-uploader"-->
+					<!--	  :action="baseUrl + '/v1/addimg/shop'"-->
+					<!--	  :show-file-list="false"-->
+					<!--	  :on-success="handleShopAvatarScucess"-->
+					<!--	  :before-upload="beforeAvatarUpload">-->
+					<!--	  <img v-if="formData.image_path" :src="baseImgPath + formData.image_path" class="avatar">-->
+					<!--	  <i v-else class="el-icon-plus avatar-uploader-icon"></i>-->
+					<!--	</el-upload>-->
+					<!--</el-form-item>-->
+					<!--<el-form-item label="上传营业执照">-->
+					<!--	<el-upload-->
+					<!--	  class="avatar-uploader"-->
+					<!--	  :action="baseUrl + '/v1/addimg/shop'"-->
+					<!--	  :show-file-list="false"-->
+					<!--	  :on-success="handleBusinessAvatarScucess"-->
+					<!--	  :before-upload="beforeAvatarUpload">-->
+					<!--	  <img v-if="formData.business_license_image" :src="baseImgPath + formData.business_license_image" class="avatar">-->
+					<!--	  <i v-else class="el-icon-plus avatar-uploader-icon"></i>-->
+					<!--	</el-upload>-->
+					<!--</el-form-item>-->
+					<!--<el-form-item label="上传餐饮服务许可证">-->
+					<!--	<el-upload-->
+					<!--	  class="avatar-uploader"-->
+					<!--	  :action="baseUrl + '/v1/addimg/shop'"-->
+					<!--	  :show-file-list="false"-->
+					<!--	  :on-success="handleServiceAvatarScucess"-->
+					<!--	  :before-upload="beforeAvatarUpload">-->
+					<!--	  <img v-if="formData.catering_service_license_image" :src="baseImgPath + formData.catering_service_license_image" class="avatar">-->
+					<!--	  <i v-else class="el-icon-plus avatar-uploader-icon"></i>-->
+					<!--	</el-upload>-->
+					<!--</el-form-item>-->
 					<el-form-item label="优惠活动">
 						<el-select v-model="activityValue" @change="selectActivity" :placeholder="activityValue">
 						    <el-option
@@ -154,7 +154,7 @@
 					    </el-table-column>
 					</el-table>
 					<el-form-item class="button_submit">
-						<el-button type="primary" @click="submitForm('formData')">立即创建</el-button>
+						<el-button type="primary" @click="addShop">立即创建</el-button>
 					</el-form-item>
 				</el-form>
   			</el-col>
@@ -168,6 +168,21 @@
     import {baseUrl, baseImgPath} from '@/config/env'
     export default {
     	data(){
+            let validatePhone=(rule, value, cb)=>{
+                console.log(value)
+                if(value.length==0){
+                    cb()
+                }else {
+                    let resultType = value.toString().split('').every(item => {
+                        return Number.isFinite(parseInt(item))
+                    })
+                    if(value[0]!==0 && resultType){
+                        cb()
+                    }else {
+                        cb(new Error('电话号码必须是数字'))
+                    }
+                }
+            };
     		return {
     			city: {},
     			formData: {
@@ -201,8 +216,8 @@
 						{ required: true, message: '请输入详细地址', trigger: 'blur' }
 					],
 					phone: [
-						{ required: true, message: '请输入联系电话' },
-						{ type: 'number', message: '电话号码必须是数字' }
+						// { required: true, message: '请输入联系电话' },
+						{ validator: validatePhone, trigger: 'change' }
 					],
 				},
 				options: [{
@@ -237,6 +252,25 @@
     		this.initData();
     	},
     	methods: {
+            addShop() {
+                this.$http.post('/addShop',{
+                    name: this.formData.name,
+                    address: this.formData.address
+                }).then((res)=>{
+                    let state;
+                    if(res.data.status==='00'){
+                        this.tableData = res.data.data;
+                        state='success';
+                    }else {
+                        state='error';
+                    }
+                    this.$durationMes[state]({
+                        message: res.data.msg||'失败'
+                    })
+                },(err)=>{
+                    console.log(err);
+                });
+            },
     		async initData(){
     			try{
     				this.city = await cityGuess();

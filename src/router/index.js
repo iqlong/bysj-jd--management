@@ -95,6 +95,7 @@ const routes = [
 ]
 
 export default new Router({
+    mode: 'history',
 	routes,
 	strict: process.env.NODE_ENV !== 'production',
 })
